@@ -80,6 +80,11 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
 
     preds, maxvals = get_max_preds(batch_heatmaps.detach().cpu().numpy())
 
+    ##---new code---##
+    Rx = batch_image.size(3)/heatmap_width
+    Ry = batch_image.size(2)/heatmap_height
+    ##--ends here--##
+    results = []
     for i in range(batch_size):
         image = batch_image[i].mul(255)\
                               .clamp(0, 255)\
@@ -97,6 +102,7 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
         height_begin = heatmap_height * i
         height_end = heatmap_height * (i + 1)
         for j in range(num_joints):
+            ##--operations on resized image--##
             cv2.circle(resized_image,
                        (int(preds[i][j][0]), int(preds[i][j][1])),
                        1, [0, 0, 255], 1)
@@ -106,7 +112,20 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
             cv2.circle(masked_image,
                        (int(preds[i][j][0]), int(preds[i][j][1])),
                        1, [0, 0, 255], 1)
-
+            ##--finishes here ig??--##
+            ##--lets try new ops, on og image--##
+            cv2.circle(image,
+                       (int(preds[i][j][0]*Rx), int(preds[i][j][1]*Ry)),
+                       1, [0, 0, 255], 1)
+            heatmap_r = cv2.resize(heatmaps[j, :, :], (batch_image.size(3),batch_image.size(2)))
+            colored_heatmap_r = cv2.applyColorMap(heatmap_r, cv2.COLORMAP_JET)
+            masked_image_r = colored_heatmap_r*0.7 + image*0.3
+            cv2.circle(masked_image_r,
+                       (int(preds[i][j][0]*Rx), int(preds[i][j][1]*Ry)),
+                       1, [0, 0, 255], 1)
+            results.append(masked_image_r)
+            #cv2.imwrite(file_name[:9]+str(j)+file_name[9:], masked_image_r)
+            ##--ripp--##
             width_begin = heatmap_width * (j+1)
             width_end = heatmap_width * (j+2)
             grid_image[height_begin:height_end, width_begin:width_end, :] = \
@@ -117,6 +136,7 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
         grid_image[height_begin:height_end, 0:heatmap_width, :] = resized_image
 
     cv2.imwrite(file_name, grid_image)
+    return results
 
 
 def save_debug_images(config, input, meta, target, joints_pred, output,
