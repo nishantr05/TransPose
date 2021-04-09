@@ -122,7 +122,7 @@ def save_batch_heatmaps(batch_image, batch_heatmaps, file_name,
             masked_image_r = colored_heatmap_r*0.7 + image*0.3
             cv2.circle(masked_image_r,
                        (int(preds[i][j][0]*Rx), int(preds[i][j][1]*Ry)),
-                       1, [0, 0, 255], 1)
+                       3, [0, 0, 255], 1)
             results.append(masked_image_r)
             #cv2.imwrite(file_name[:9]+str(j)+file_name[9:], masked_image_r)
             ##--ripp--##
